@@ -1,0 +1,95 @@
+diff --git a/chrome/browser/ui/startup/startup_browser_creator_impl.cc b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
+index c3c5b9c72503..d9e74a4716c6 100644
+--- a/chrome/browser/ui/startup/startup_browser_creator_impl.cc
++++ b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
+@@ -827,8 +827,8 @@ void StartupBrowserCreatorImpl::AddInfoBarsIfNecessary(
+   if (!browser || !profile_ || browser->tab_strip_model()->count() == 0)
+     return;
+ 
+-  if (HasPendingUncleanExit(browser->profile()))
+-    SessionCrashedBubble::ShowIfNotOffTheRecordProfile(browser);
++  //if (HasPendingUncleanExit(browser->profile()))
++    //SessionCrashedBubble::ShowIfNotOffTheRecordProfile(browser);
+ 
+   bool show_bad_flags_security_warnings = ShouldShowBadFlagsSecurityWarnings();
+   if (command_line_.HasSwitch(switches::kEnableAutomation) &&
+diff --git a/components/infobars/core/infobar_manager.cc b/components/infobars/core/infobar_manager.cc
+index 91d8fe5dcadf..627b21251b25 100644
+--- a/components/infobars/core/infobar_manager.cc
++++ b/components/infobars/core/infobar_manager.cc
+@@ -36,6 +36,7 @@ void InfoBarManager::Observer::OnManagerShuttingDown(InfoBarManager* manager) {
+ InfoBar* InfoBarManager::AddInfoBar(std::unique_ptr<InfoBar> infobar,
+                                     bool replace_existing) {
+   DCHECK(infobar);
++  return nullptr;
+ 
+   for (InfoBars::const_iterator i(infobars_.begin()); i != infobars_.end();
+        ++i) {
+@@ -68,6 +69,7 @@ void InfoBarManager::RemoveAllInfoBars(bool animate) {
+ InfoBar* InfoBarManager::ReplaceInfoBar(InfoBar* old_infobar,
+                                         std::unique_ptr<InfoBar> new_infobar) {
+   DCHECK(old_infobar);
++  return AddInfoBar(std::move(new_infobar));
+   DCHECK(new_infobar);
+ 
+   auto i(std::find(infobars_.begin(), infobars_.end(), old_infobar));
+@@ -122,6 +124,8 @@ void InfoBarManager::OnNavigation(
+ 
+ void InfoBarManager::RemoveInfoBarInternal(InfoBar* infobar, bool animate) {
+   DCHECK(infobar);
++  DCHECK(infobars_.empty());
++  return;
+ 
+   auto i(std::find(infobars_.begin(), infobars_.end(), infobar));
+   DCHECK(i != infobars_.end());
+diff --git a/third_party/blink/renderer/core/frame/navigator.h b/third_party/blink/renderer/core/frame/navigator.h
+index 4572df017cf4..fff07ba9bfb5 100644
+--- a/third_party/blink/renderer/core/frame/navigator.h
++++ b/third_party/blink/renderer/core/frame/navigator.h
+@@ -56,7 +56,6 @@ class CORE_EXPORT Navigator final : public ScriptWrappable,
+   // NavigatorCookies
+   bool cookieEnabled() const;
+ 
+-  bool webdriver() const { return true; }
+ 
+   String productSub() const;
+   String vendor() const;
+diff --git a/third_party/blink/renderer/core/frame/navigator_automation_information.idl b/third_party/blink/renderer/core/frame/navigator_automation_information.idl
+index 263575eabe4d..96b6d637ca35 100644
+--- a/third_party/blink/renderer/core/frame/navigator_automation_information.idl
++++ b/third_party/blink/renderer/core/frame/navigator_automation_information.idl
+@@ -8,5 +8,5 @@
+     Exposed=Window,
+     RuntimeEnabled=AutomationControlled
+ ] interface mixin NavigatorAutomationInformation {
+-    readonly attribute boolean webdriver;
++    //readonly attribute boolean webdriver;
+ };
+diff --git a/third_party/blink/web_tests/navigator_webdriver/navigator_webdriver_enabled.html b/third_party/blink/web_tests/navigator_webdriver/navigator_webdriver_enabled.html
+index 8240541203c3..8f25f67ea9d2 100644
+--- a/third_party/blink/web_tests/navigator_webdriver/navigator_webdriver_enabled.html
++++ b/third_party/blink/web_tests/navigator_webdriver/navigator_webdriver_enabled.html
+@@ -14,17 +14,17 @@ internals.runtimeFlags.automationControlledEnabled = true;
+ 
+ test(function() {
+   assert_true(internals.runtimeFlags.automationControlledEnabled);
+-  assert_true("webdriver" in window.navigator);
+-  assert_true(navigator.webdriver);
++  assert_false("webdriver" in window.navigator);
++  assert_false(navigator.webdriver);
+ }, "Test if Navigator implements NavigatorAutomationInformation interface");
+ 
+ 
+ test(function() {
+ 	var descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(navigator), "webdriver");
+-  assert_true(descriptor !== undefined);
+-  assert_true(descriptor.configurable);
+-  assert_true(descriptor.enumerable);
+-  assert_true(descriptor.set === undefined);
++  assert_false(descriptor !== undefined);
++  assert_false(descriptor.configurable);
++  assert_false(descriptor.enumerable);
++  assert_false(descriptor.set === undefined);
+ }, "Test that the navigator.webdriver descriptor has expected properties");
+ </script>
+ </body>
