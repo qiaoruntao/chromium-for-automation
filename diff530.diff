@@ -1,0 +1,95 @@
+diff --git a/chrome/browser/ui/startup/startup_browser_creator_impl.cc b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
+index e25bf88aa86d..7d95cf893cdd 100644
+--- a/chrome/browser/ui/startup/startup_browser_creator_impl.cc
++++ b/chrome/browser/ui/startup/startup_browser_creator_impl.cc
+@@ -879,8 +879,8 @@ void StartupBrowserCreatorImpl::AddInfoBarsIfNecessary(
+   if (command_line_.HasSwitch(switches::kKioskMode))
+     return;
+ 
+-  if (HasPendingUncleanExit(browser->profile()))
+-    SessionCrashedBubble::ShowIfNotOffTheRecordProfile(browser);
++  // if (HasPendingUncleanExit(browser->profile()))
++  //  SessionCrashedBubble::ShowIfNotOffTheRecordProfile(browser);
+ 
+   // The below info bars are only added to the first profile which is launched.
+   // Other profiles might be restoring the browsing sessions asynchronously,
+diff --git a/components/infobars/core/infobar_manager.cc b/components/infobars/core/infobar_manager.cc
+index c3fa6faa4c9f..e45fc0608b67 100644
+--- a/components/infobars/core/infobar_manager.cc
++++ b/components/infobars/core/infobar_manager.cc
+@@ -35,25 +35,7 @@ void InfoBarManager::Observer::OnManagerShuttingDown(InfoBarManager* manager) {
+ 
+ InfoBar* InfoBarManager::AddInfoBar(std::unique_ptr<InfoBar> infobar,
+                                     bool replace_existing) {
+-  DCHECK(infobar);
+-
+-  for (InfoBars::const_iterator i(infobars_.begin()); i != infobars_.end();
+-       ++i) {
+-    if ((*i)->delegate()->EqualsDelegate(infobar->delegate())) {
+-      DCHECK_NE((*i)->delegate(), infobar->delegate());
+-      return replace_existing ? ReplaceInfoBar(*i, std::move(infobar))
+-                              : nullptr;
+-    }
+-  }
+-
+-  InfoBar* infobar_ptr = infobar.release();
+-  infobars_.push_back(infobar_ptr);
+-  infobar_ptr->SetOwner(this);
+-
+-  for (Observer& observer : observer_list_)
+-    observer.OnInfoBarAdded(infobar_ptr);
+-
+-  return infobar_ptr;
++  return nullptr;
+ }
+ 
+ void InfoBarManager::RemoveInfoBar(InfoBar* infobar) {
+diff --git a/third_party/blink/renderer/core/frame/navigator.h b/third_party/blink/renderer/core/frame/navigator.h
+index 3fda8230a9c8..3adaa9271951 100644
+--- a/third_party/blink/renderer/core/frame/navigator.h
++++ b/third_party/blink/renderer/core/frame/navigator.h
+@@ -55,8 +55,6 @@ class CORE_EXPORT Navigator final : public ScriptWrappable,
+   // NavigatorCookies
+   bool cookieEnabled() const;
+ 
+-  bool webdriver() const { return true; }
+-
+   String productSub() const;
+   String vendor() const;
+   String vendorSub() const;
+diff --git a/third_party/blink/renderer/core/frame/navigator_automation_information.idl b/third_party/blink/renderer/core/frame/navigator_automation_information.idl
+index 3d7ca44799b9..2ad49f77d400 100644
+--- a/third_party/blink/renderer/core/frame/navigator_automation_information.idl
++++ b/third_party/blink/renderer/core/frame/navigator_automation_information.idl
+@@ -7,5 +7,5 @@
+ [
+     RuntimeEnabled=AutomationControlled
+ ] interface mixin NavigatorAutomationInformation {
+-    readonly attribute boolean webdriver;
++    // readonly attribute boolean webdriver;
+ };
+diff --git a/third_party/blink/web_tests/navigator_webdriver/navigator_webdriver_enabled.html b/third_party/blink/web_tests/navigator_webdriver/navigator_webdriver_enabled.html
+index 8240541203c3..e191e72d2db7 100644
+--- a/third_party/blink/web_tests/navigator_webdriver/navigator_webdriver_enabled.html
++++ b/third_party/blink/web_tests/navigator_webdriver/navigator_webdriver_enabled.html
+@@ -14,18 +14,10 @@ internals.runtimeFlags.automationControlledEnabled = true;
+ 
+ test(function() {
+   assert_true(internals.runtimeFlags.automationControlledEnabled);
+-  assert_true("webdriver" in window.navigator);
+-  assert_true(navigator.webdriver);
++  assert_false("webdriver" in window.navigator);
++  assert_false(navigator.webdriver);
+ }, "Test if Navigator implements NavigatorAutomationInformation interface");
+ 
+-
+-test(function() {
+-	var descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(navigator), "webdriver");
+-  assert_true(descriptor !== undefined);
+-  assert_true(descriptor.configurable);
+-  assert_true(descriptor.enumerable);
+-  assert_true(descriptor.set === undefined);
+-}, "Test that the navigator.webdriver descriptor has expected properties");
+ </script>
+ </body>
+ </html>
